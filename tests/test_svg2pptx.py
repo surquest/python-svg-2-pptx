@@ -74,13 +74,14 @@ class TestSVG2Pptx:
     def test_svg_to_ir_matches_json_ir(self, svg_file):
         """Assure the SVG parser produces identical IR as stored in the reference JSON files."""
         converter = SVG2Pptx()
-        svg_source = converter._get_svg_source(svg_file)
+        svg_source, svg_path = converter._get_svg_source(svg_file)
         
         ir_from_svg = SVGParser(
             svg_source,
             slide_width=converter.slide_width_emu,
             slide_height=converter.slide_height_emu,
-            svg_ns=converter.svg_ns
+            svg_ns=converter.svg_ns,
+            svg_path=svg_path,
         ).parse()
         
         json_file = svg_file.with_suffix(".json")

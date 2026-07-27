@@ -96,15 +96,16 @@ class SVG2Pptx:
         self.slide_height_emu = slide_height_emu or self.SLIDE_HEIGHT_EMU
         self.svg_ns = svg_ns or self.SVG_NS
     
-    def _get_svg_source(self, svg_input: Union[str, Path]) -> str:
+    def _get_svg_source(self, svg_input: Union[str, Path]) -> tuple:
+        """Return (svg_source, svg_path) tuple."""
         if isinstance(svg_input, (str, Path)):
             try:
                 if os.path.isfile(svg_input):
                     with open(svg_input, "r", encoding="utf-8") as f:
-                        return f.read()
+                        return f.read(), str(svg_input)
             except Exception:
                 pass
-            return str(svg_input)
+            return str(svg_input), None
         raise TypeError("svg_input must be a string containing SVG content or a file path.")
 
     def to_json(self, svg_input: Union[str, Path, List[Union[str, Path]]], indent: int = 2) -> str:
@@ -116,12 +117,13 @@ class SVG2Pptx:
             
         irs = []
         for inp in svg_input:
-            svg_source = self._get_svg_source(inp)
+            svg_source, svg_path = self._get_svg_source(inp)
             ir = SVGParser(
                 svg_source,
                 slide_width=self.slide_width_emu,
                 slide_height=self.slide_height_emu,
-                svg_ns=self.svg_ns
+                svg_ns=self.svg_ns,
+                svg_path=svg_path,
             ).parse()
             irs.append(ir)
             
@@ -143,12 +145,13 @@ class SVG2Pptx:
 
         irs = []
         for inp in svg_input:
-            svg_source = self._get_svg_source(inp)
+            svg_source, svg_path = self._get_svg_source(inp)
             ir = SVGParser(
                 svg_source,
                 slide_width=self.slide_width_emu,
                 slide_height=self.slide_height_emu,
-                svg_ns=self.svg_ns
+                svg_ns=self.svg_ns,
+                svg_path=svg_path,
             ).parse()
             irs.append(ir)
         

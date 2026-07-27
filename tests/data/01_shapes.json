@@ -14,12 +14,14 @@
         "r": 255,
         "g": 204,
         "b": 203,
+        "opacity": 1.0,
         "__type__": "Color"
       },
       "stroke": {
         "r": 211,
         "g": 47,
         "b": 47,
+        "opacity": 1.0,
         "__type__": "Color"
       },
       "stroke_width_emu": 38100,
@@ -40,12 +42,14 @@
         "r": 200,
         "g": 230,
         "b": 201,
+        "opacity": 1.0,
         "__type__": "Color"
       },
       "stroke": {
         "r": 56,
         "g": 142,
         "b": 60,
+        "opacity": 1.0,
         "__type__": "Color"
       },
       "stroke_width_emu": 25400,
@@ -66,12 +70,14 @@
         "r": 187,
         "g": 222,
         "b": 251,
+        "opacity": 1.0,
         "__type__": "Color"
       },
       "stroke": {
         "r": 2,
         "g": 136,
         "b": 209,
+        "opacity": 1.0,
         "__type__": "Color"
       },
       "stroke_width_emu": 50800,
@@ -91,12 +97,14 @@
         "r": 255,
         "g": 249,
         "b": 196,
+        "opacity": 1.0,
         "__type__": "Color"
       },
       "stroke": {
         "r": 251,
         "g": 192,
         "b": 45,
+        "opacity": 1.0,
         "__type__": "Color"
       },
       "stroke_width_emu": 25400,
@@ -127,12 +135,14 @@
         "r": 225,
         "g": 190,
         "b": 231,
+        "opacity": 1.0,
         "__type__": "Color"
       },
       "stroke": {
         "r": 251,
         "g": 192,
         "b": 45,
+        "opacity": 1.0,
         "__type__": "Color"
       },
       "stroke_width_emu": 25400,

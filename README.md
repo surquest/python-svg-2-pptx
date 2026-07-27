@@ -1,6 +1,23 @@
-# Python SVG to PPTX Compiler
+# suyujay-svg2pptx
 
-A high-fidelity, two-pass compiler that translates structured SVG metadata into native PowerPoint (`.pptx`) presentations. It uses a strictly decoupled Intermediate Representation (IR) layer to bridge SVG semantics with PowerPoint's DrawingML.
+Fork of [surquest-utils-svg2pptx](https://github.com/surquest/python-svg-2-pptx) with additional features.
+
+## Additional Features (this fork)
+
+- **Opacity Support**: `fill-opacity` and `stroke-opacity` attributes
+- **Gradient Support**: Linear gradients from `<defs>` with `url(#id)` references
+- **Image Support**: SVG `<image>` elements with aspect ratio preservation
+- **Font Mapping**: CSS generic font families (`monospace` → Consolas, `sans-serif` → Arial, `serif` → Times New Roman)
+
+## Attribution
+
+Original project by [surQuest](https://github.com/surquest/python-svg-2-pptx). Licensed under MIT.
+
+## Installation
+
+```bash
+pip install suyujay-svg2pptx
+```
 
 ## Features
 
@@ -37,7 +54,7 @@ The compiler expects SVG files to conform to specific structural and metadata ru
 ### Installation
 
 ```bash
-pip install surquest-utils-svg2pptx
+pip install suyujay-svg2pptx
 ```
 
 ### Simple Conversion (Single Slide)

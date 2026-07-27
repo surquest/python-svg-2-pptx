@@ -12,8 +12,8 @@ from pptx.util import Emu, Pt
 
 from ..models import (
     IRSlide, IRNode, IRInfoBox, IRText, IRRectangle, IRIcon, IRLine, IRGroup,
-    IREllipse, IRPolygon,
-    IRConnector, Point, Color, ArrowType, ConnectorType, TextBlock
+    IREllipse, IRPolygon, IRImage,
+    IRConnector, Point, Color, GradientFill, ArrowType, ConnectorType, TextBlock
 )
 from .image_patch import _pptx_image
 
@@ -75,6 +75,8 @@ class PPTXBackend:
             return self._render_decorative_line(node)
         elif isinstance(node, IRGroup):
             return self._render_group(node)
+        elif isinstance(node, IRImage):
+            return self._render_image(node)
         return None
 
     # ---------- Renderers ----------
@@ -219,14 +221,19 @@ class PPTXBackend:
                 shape.adjustments[0] = adj_val
 
         if rect.fill:
-            shape.fill.solid()
-            shape.fill.fore_color.rgb = rect.fill.to_rgb()
+            if isinstance(rect.fill, GradientFill):
+                self._apply_gradient_fill(shape, rect.fill)
+            else:
+                shape.fill.solid()
+                shape.fill.fore_color.rgb = rect.fill.to_rgb()
+                self._apply_fill_opacity(shape, rect.fill.opacity)
         else:
             shape.fill.background()
 
         if rect.stroke:
             shape.line.color.rgb = rect.stroke.to_rgb()
             shape.line.width = max(rect.stroke_width_emu, 1)
+            self._apply_line_opacity(shape, rect.stroke.opacity)
         else:
             shape.line.fill.background()
 
@@ -250,14 +257,19 @@ class PPTXBackend:
         )
         
         if el.fill:
-            shape.fill.solid()
-            shape.fill.fore_color.rgb = el.fill.to_rgb()
+            if isinstance(el.fill, GradientFill):
+                self._apply_gradient_fill(shape, el.fill)
+            else:
+                shape.fill.solid()
+                shape.fill.fore_color.rgb = el.fill.to_rgb()
+                self._apply_fill_opacity(shape, el.fill.opacity)
         else:
             shape.fill.background()
 
         if el.stroke:
             shape.line.color.rgb = el.stroke.to_rgb()
             shape.line.width = max(el.stroke_width_emu, 1)
+            self._apply_line_opacity(shape, el.stroke.opacity)
         else:
             shape.line.fill.background()
 
@@ -288,8 +300,11 @@ class PPTXBackend:
         shape = fb.convert_to_shape()
 
         if poly.fill and poly.is_closed:
-            shape.fill.solid()
-            shape.fill.fore_color.rgb = poly.fill.to_rgb()
+            if isinstance(poly.fill, GradientFill):
+                self._apply_gradient_fill(shape, poly.fill)
+            else:
+                shape.fill.solid()
+                shape.fill.fore_color.rgb = poly.fill.to_rgb()
         else:
             shape.fill.background()
 
@@ -324,6 +339,48 @@ class PPTXBackend:
             )
             placeholder.fill.background()
             placeholder.line.color.rgb = RGBColor(0x00, 0x7B, 0xFF)
+            self._disable_shadow(placeholder)
+            return placeholder
+
+    def _render_image(self, img: IRImage):
+        g = img.geometry
+        try:
+            from PIL import Image
+            pil_img = Image.open(io.BytesIO(img.image_bytes))
+            orig_w, orig_h = pil_img.size
+
+            # Calculate aspect-ratio-preserving dimensions
+            aspect = orig_w / orig_h
+            target_w = g.width
+            target_h = g.height
+            target_aspect = target_w / target_h
+
+            if aspect > target_aspect:
+                # Image is wider than target - fit to width
+                new_w = target_w
+                new_h = int(target_w / aspect)
+            else:
+                # Image is taller than target - fit to height
+                new_h = target_h
+                new_w = int(target_h * aspect)
+
+            # Center within the target area
+            offset_x = (target_w - new_w) // 2
+            offset_y = (target_h - new_h) // 2
+
+            stream = io.BytesIO(img.image_bytes)
+            pic = self.slide.shapes.add_picture(
+                stream, g.x + offset_x, g.y + offset_y, width=new_w, height=new_h
+            )
+            self._disable_shadow(pic)
+            return pic
+        except Exception as e:
+            logger.warning("Could not render image %s: %s", img.href, e)
+            placeholder = self.slide.shapes.add_shape(
+                MSO_SHAPE.RECTANGLE, g.x, g.y, g.width, g.height
+            )
+            placeholder.fill.background()
+            placeholder.line.color.rgb = RGBColor(0xCC, 0x00, 0x00)
             self._disable_shadow(placeholder)
             return placeholder
 
@@ -550,3 +607,75 @@ class PPTXBackend:
                 lxml_etree.SubElement(pr, qn("a:effectLst"))
         except Exception:
             pass
+
+    def _apply_fill_opacity(self, shape, opacity: float) -> None:
+        if opacity >= 1.0:
+            return
+        try:
+            elem = shape._element
+            spPr = elem.find(qn("p:spPr"))
+            if spPr is None:
+                spPr = elem.find(qn("wsp:spPr"))
+            if spPr is None:
+                return
+            solidFill = spPr.find(qn("a:solidFill"))
+            if solidFill is None:
+                return
+            srgbClr = solidFill.find(qn("a:srgbClr"))
+            if srgbClr is not None:
+                alpha_val = int(opacity * 100000)
+                alpha = lxml_etree.SubElement(srgbClr, qn("a:alpha"))
+                alpha.set("val", str(alpha_val))
+        except Exception:
+            pass
+
+    def _apply_line_opacity(self, shape, opacity: float) -> None:
+        if opacity >= 1.0:
+            return
+        try:
+            ln = shape.line._get_or_add_ln()
+            solidFill = ln.find(qn("a:solidFill"))
+            if solidFill is None:
+                return
+            srgbClr = solidFill.find(qn("a:srgbClr"))
+            if srgbClr is not None:
+                alpha_val = int(opacity * 100000)
+                alpha = lxml_etree.SubElement(srgbClr, qn("a:alpha"))
+                alpha.set("val", str(alpha_val))
+        except Exception:
+            pass
+
+    def _apply_gradient_fill(self, shape, gradient: GradientFill) -> None:
+        """Apply a gradient fill to a shape."""
+        try:
+            shape.fill.gradient()
+            # Set gradient angle (PowerPoint uses 60000ths of a degree)
+            lin_angle = int(gradient.angle * 60000)
+            # Set stops
+            stops = shape.fill.gradient_stops
+            # Remove existing stops (keep at least one)
+            while len(stops) > 1:
+                stops[0]._element.getparent().remove(stops[0]._element)
+            # Add gradient stops
+            gsLst = shape._element.find(qn('p:spPr')).find(qn('a:gradFill')).find(qn('a:gsLst'))
+            if gsLst is None:
+                gradFill = shape._element.find(qn('p:spPr')).find(qn('a:gradFill'))
+                gsLst = lxml_etree.SubElement(gradFill, qn('a:gsLst'))
+            # Clear existing stops
+            for gs in gsLst.findall(qn('a:gs')):
+                gsLst.remove(gs)
+            # Add new stops
+            for stop in gradient.stops:
+                gs = lxml_etree.SubElement(gsLst, qn('a:gs'))
+                gs.set('pos', str(int(stop.position * 100000)))
+                srgbClr = lxml_etree.SubElement(gs, qn('a:srgbClr'))
+                srgbClr.set('val', f'{stop.color.r:02X}{stop.color.g:02X}{stop.color.b:02X}')
+            # Set linear angle
+            lin = shape._element.find(qn('p:spPr')).find(qn('a:gradFill')).find(qn('a:lin'))
+            if lin is None:
+                lin = lxml_etree.SubElement(shape._element.find(qn('p:spPr')).find(qn('a:gradFill')), qn('a:lin'))
+            lin.set('ang', str(lin_angle))
+            lin.set('scaled', '1')
+        except Exception as e:
+            logger.warning("Could not apply gradient fill: %s", e)
+            shape.fill.background()

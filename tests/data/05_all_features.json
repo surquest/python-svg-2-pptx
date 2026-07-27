@@ -15,12 +15,14 @@
           "r": 248,
           "g": 249,
           "b": 250,
+          "opacity": 1.0,
           "__type__": "Color"
         },
         "stroke": {
           "r": 95,
           "g": 99,
           "b": 104,
+          "opacity": 1.0,
           "__type__": "Color"
         },
         "stroke_width_emu": 25400,
@@ -44,6 +46,7 @@
                     "r": 0,
                     "g": 0,
                     "b": 0,
+                    "opacity": 1.0,
                     "__type__": "Color"
                   },
                   "__type__": "FontStyle"
@@ -80,12 +83,14 @@
                 "r": 232,
                 "g": 240,
                 "b": 254,
+                "opacity": 1.0,
                 "__type__": "Color"
               },
               "stroke": {
                 "r": 26,
                 "g": 115,
                 "b": 232,
+                "opacity": 1.0,
                 "__type__": "Color"
               },
               "stroke_width_emu": 25400,
@@ -108,6 +113,7 @@
                         "r": 0,
                         "g": 0,
                         "b": 0,
+                        "opacity": 1.0,
                         "__type__": "Color"
                       },
                       "__type__": "FontStyle"
@@ -136,6 +142,7 @@
                 "r": 234,
                 "g": 67,
                 "b": 53,
+                "opacity": 1.0,
                 "__type__": "Color"
               },
               "stroke": null,
@@ -162,12 +169,14 @@
                 "r": 230,
                 "g": 244,
                 "b": 234,
+                "opacity": 1.0,
                 "__type__": "Color"
               },
               "stroke": {
                 "r": 52,
                 "g": 168,
                 "b": 83,
+                "opacity": 1.0,
                 "__type__": "Color"
               },
               "stroke_width_emu": 25400,
@@ -190,6 +199,7 @@
                         "r": 0,
                         "g": 0,
                         "b": 0,
+                        "opacity": 1.0,
                         "__type__": "Color"
                       },
                       "__type__": "FontStyle"
@@ -231,6 +241,7 @@
         "r": 251,
         "g": 188,
         "b": 4,
+        "opacity": 1.0,
         "__type__": "Color"
       },
       "stroke_width_emu": 38100,
@@ -269,6 +280,7 @@
         "r": 234,
         "g": 67,
         "b": 53,
+        "opacity": 1.0,
         "__type__": "Color"
       },
       "stroke_width_emu": 25400,
@@ -307,12 +319,14 @@
         "r": 252,
         "g": 232,
         "b": 230,
+        "opacity": 1.0,
         "__type__": "Color"
       },
       "stroke": {
         "r": 234,
         "g": 67,
         "b": 53,
+        "opacity": 1.0,
         "__type__": "Color"
       },
       "stroke_width_emu": 25400,
@@ -334,6 +348,7 @@
                 "r": 0,
                 "g": 0,
                 "b": 0,
+                "opacity": 1.0,
                 "__type__": "Color"
               },
               "__type__": "FontStyle"
@@ -352,6 +367,7 @@
                 "r": 0,
                 "g": 0,
                 "b": 0,
+                "opacity": 1.0,
                 "__type__": "Color"
               },
               "__type__": "FontStyle"
@@ -383,6 +399,7 @@
         "r": 0,
         "g": 0,
         "b": 0,
+        "opacity": 1.0,
         "__type__": "Color"
       },
       "stroke_width_emu": 12700,

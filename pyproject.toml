@@ -3,16 +3,19 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "surquest-utils-svg2pptx"
-version = "0.0.2"
-description = "A high-fidelity, two-pass compiler that translates structured SVG metadata into native PowerPoint (.pptx) presentations."
+name = "suyujay-svg2pptx"
+version = "0.1.0"
+description = "Fork of surquest-utils-svg2pptx with opacity, gradient, and image support. Converts SVG to editable PowerPoint presentations."
 authors = [
-    {name= "surQuest", email= "info@surquest.com"}
+    {name = "Jay Su", email = "suyujay@gmail.com"}
 ]
 readme = "README.md"
+license = "MIT"
+requires-python = ">=3.8"
 dependencies = [
     "python-pptx>=1.0.2",
-    "lxml"
+    "lxml",
+    "Pillow>=9.0.0"
 ]
 
 [project.optional-dependencies]
@@ -21,14 +24,14 @@ test = [
     "pytest-cov>=7.1.0"
 ]
 
-
 [project.urls]
-"Homepage" = "https://github.com/surquest/python-svg-2-pptx"
-"Bug Tracker" = "https://github.com/surquest/python-svg-2-pptx/issues"
-
+"Homepage" = "https://github.com/Suyujay/python-svg-2-pptx"
+"Source" = "https://github.com/Suyujay/python-svg-2-pptx"
+"Bug Tracker" = "https://github.com/Suyujay/python-svg-2-pptx/issues"
+"Original" = "https://github.com/surquest/python-svg-2-pptx"
 
 [tool.hatch.build.targets.wheel]
-packages = ["surquest"]
+packages = ["src/surquest"]
 
 [tool.hatch.build.targets.sdist.sources]
 "src" = ""

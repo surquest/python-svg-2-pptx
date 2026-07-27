@@ -6,22 +6,25 @@ from pptx.enum.text import PP_ALIGN
 
 from ..models import (
     IRSlide, IRNode, IRRectangle, IRIcon, IRText, IRLine, IRConnector, IRInfoBox, IRGroup,
-    IREllipse, IRPolygon,
-    Geometry, Color, FontStyle, TextRun, TextBlock, Point, ArrowType, ConnectorType
+    IREllipse, IRPolygon, IRImage,
+    Geometry, Color, GradientFill, FontStyle, TextRun, TextBlock, Point, ArrowType, ConnectorType
 )
-from .utils import CoordinateNormalizer, _strip_ns, _parse_color, _parse_float, _parse_dash
+from .utils import CoordinateNormalizer, _strip_ns, _parse_color, _parse_float, _parse_dash, _parse_font_family, _parse_gradient, _parse_fill, _load_image_bytes
 
 class SVGParser:
     """Frontend: SVG -> IR."""
 
-    def __init__(self, svg_source: str, slide_width: int, slide_height: int, svg_ns: str):
+    def __init__(self, svg_source: str, slide_width: int, slide_height: int, svg_ns: str,
+                 svg_path: str = None):
         self.slide_width = slide_width
         self.slide_height = slide_height
         self.svg_ns = svg_ns
+        self.svg_path = svg_path
         self.root = ET.fromstring(svg_source)
         vb = self.root.get("viewBox", "0 0 960 540").split()
         viewbox = tuple(float(v) for v in vb)  # type: ignore
         self.norm = CoordinateNormalizer(viewbox, self.slide_width, self.slide_height)
+        self.gradients = self._parse_defs()
 
     # ---------- Public API ----------
 
@@ -29,6 +32,21 @@ class SVGParser:
         slide = IRSlide(width_emu=self.slide_width, height_emu=self.slide_height)
         self._traverse(self.root, slide.nodes)
         return slide
+
+    def _parse_defs(self) -> dict:
+        """Extract gradient definitions from <defs> elements."""
+        gradients = {}
+        for defs_el in self.root.iter():
+            if _strip_ns(defs_el.tag) == "defs":
+                for child in defs_el:
+                    tag = _strip_ns(child.tag)
+                    if tag in ("linearGradient", "radialGradient"):
+                        grad_id = child.get("id")
+                        if grad_id:
+                            grad = _parse_gradient(child)
+                            if grad:
+                                gradients[grad_id] = grad
+        return gradients
 
     def _parse_transform(self, transform_str: str) -> Tuple[float, float]:
         dx, dy = 0.0, 0.0
@@ -66,6 +84,10 @@ class SVGParser:
                 nodes.append(self._parse_poly(child, ndx, ndy))
             elif tag == "path":
                 nodes.append(self._parse_path_as_svg(child, ndx, ndy))
+            elif tag == "image":
+                img = self._parse_image(child, ndx, ndy)
+                if img is not None:
+                    nodes.append(img)
             elif tag == "g":
                 group_nodes = []
                 self._traverse(child, group_nodes, ndx, ndy)
@@ -138,13 +160,15 @@ class SVGParser:
         w = _parse_float(el.get("width"))
         h = _parse_float(el.get("height"))
         rx = _parse_float(el.get("rx"))
+        fill_opacity = _parse_float(el.get("fill-opacity"), 1.0)
+        stroke_opacity = _parse_float(el.get("stroke-opacity"), 1.0)
         return IRRectangle(
             geometry=Geometry(
                 self.norm.x(x), self.norm.y(y),
                 self.norm.w(w), self.norm.h(h)
             ),
-            fill=_parse_color(el.get("fill")),
-            stroke=_parse_color(el.get("stroke")),
+            fill=_parse_fill(el.get("fill"), fill_opacity, self.gradients),
+            stroke=_parse_color(el.get("stroke"), stroke_opacity),
             stroke_width_emu=int(self.norm.w(_parse_float(el.get("stroke-width"), 1))),
             corner_radius_emu=int(self.norm.w(rx)),
             dashed=_parse_dash(el.get("stroke-dasharray")),
@@ -164,13 +188,15 @@ class SVGParser:
             rx = _parse_float(el.get("rx"))
             ry = _parse_float(el.get("ry"))
             
+        fill_opacity = _parse_float(el.get("fill-opacity"), 1.0)
+        stroke_opacity = _parse_float(el.get("stroke-opacity"), 1.0)
         return IREllipse(
             geometry=Geometry(
                 self.norm.x(cx - rx), self.norm.y(cy - ry),
                 self.norm.w(rx * 2), self.norm.h(ry * 2)
             ),
-            fill=_parse_color(el.get("fill")),
-            stroke=_parse_color(el.get("stroke")),
+            fill=_parse_fill(el.get("fill"), fill_opacity, self.gradients),
+            stroke=_parse_color(el.get("stroke"), stroke_opacity),
             stroke_width_emu=int(self.norm.w(_parse_float(el.get("stroke-width"), 1))),
             dashed=_parse_dash(el.get("stroke-dasharray")),
             shape_id=el.get("id"),
@@ -190,7 +216,7 @@ class SVGParser:
         return IRPolygon(
              waypoints=waypoints,
              is_closed=is_closed,
-             fill=_parse_color(el.get("fill")) if is_closed else None,
+             fill=_parse_fill(el.get("fill"), gradients=self.gradients) if is_closed else None,
              stroke=_parse_color(el.get("stroke")),
              stroke_width_emu=int(self.norm.w(_parse_float(el.get("stroke-width"), 1))),
              dashed=_parse_dash(el.get("stroke-dasharray")),
@@ -246,6 +272,31 @@ class SVGParser:
                 self.norm.w(w), self.norm.h(h)
             ),
             svg_bytes=svg_str,
+        )
+
+    def _parse_image(self, el: ET.Element, dx: float = 0.0, dy: float = 0.0) -> Optional[IRImage]:
+        x = _parse_float(el.get("x")) + dx
+        y = _parse_float(el.get("y")) + dy
+        w = _parse_float(el.get("width"))
+        h = _parse_float(el.get("height"))
+        href = el.get("href") or el.get("{http://www.w3.org/1999/xlink}href") or ""
+        preserve_aspect = el.get("preserveAspectRatio", "xMidYMid meet")
+
+        result = _load_image_bytes(href, self.svg_path)
+        if result is None:
+            return None
+
+        image_bytes, content_type = result
+        return IRImage(
+            geometry=Geometry(
+                self.norm.x(x), self.norm.y(y),
+                self.norm.w(w), self.norm.h(h)
+            ),
+            href=href,
+            image_bytes=image_bytes,
+            content_type=content_type,
+            preserve_aspect_ratio=preserve_aspect,
+            shape_id=el.get("id"),
         )
 
     def _parse_text(self, el: ET.Element,
@@ -358,7 +409,7 @@ class SVGParser:
     def _extract_font(self, el: ET.Element,
                       fallback: Optional[FontStyle] = None) -> FontStyle:
         fb = fallback or FontStyle()
-        family = el.get("font-family", fb.family)
+        family = _parse_font_family(el.get("font-family", fb.family))
         size_attr = el.get("font-size")
         size = self.norm.pt(_parse_float(size_attr, 16)) if size_attr else fb.size_pt
         weight = el.get("font-weight", "bold" if fb.bold else "normal")
@@ -367,7 +418,7 @@ class SVGParser:
         )
         fill = _parse_color(el.get("fill"))
         return FontStyle(
-            family=family.strip("'\""),
+            family=family,
             size_pt=size,
             bold=bold,
             italic=fb.italic,

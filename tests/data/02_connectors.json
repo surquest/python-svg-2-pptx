@@ -15,12 +15,14 @@
           "r": 238,
           "g": 238,
           "b": 238,
+          "opacity": 1.0,
           "__type__": "Color"
         },
         "stroke": {
           "r": 51,
           "g": 51,
           "b": 51,
+          "opacity": 1.0,
           "__type__": "Color"
         },
         "stroke_width_emu": 12700,
@@ -44,6 +46,7 @@
                     "r": 0,
                     "g": 0,
                     "b": 0,
+                    "opacity": 1.0,
                     "__type__": "Color"
                   },
                   "__type__": "FontStyle"
@@ -82,12 +85,14 @@
           "r": 238,
           "g": 238,
           "b": 238,
+          "opacity": 1.0,
           "__type__": "Color"
         },
         "stroke": {
           "r": 51,
           "g": 51,
           "b": 51,
+          "opacity": 1.0,
           "__type__": "Color"
         },
         "stroke_width_emu": 12700,
@@ -111,6 +116,7 @@
                     "r": 0,
                     "g": 0,
                     "b": 0,
+                    "opacity": 1.0,
                     "__type__": "Color"
                   },
                   "__type__": "FontStyle"
@@ -154,6 +160,7 @@
         "r": 25,
         "g": 118,
         "b": 210,
+        "opacity": 1.0,
         "__type__": "Color"
       },
       "stroke_width_emu": 25400,
@@ -192,6 +199,7 @@
         "r": 211,
         "g": 47,
         "b": 47,
+        "opacity": 1.0,
         "__type__": "Color"
       },
       "stroke_width_emu": 38100,
@@ -217,6 +225,7 @@
         "r": 123,
         "g": 31,
         "b": 162,
+        "opacity": 1.0,
         "__type__": "Color"
       },
       "stroke_width_emu": 50800,
